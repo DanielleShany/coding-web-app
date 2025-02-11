@@ -1,19 +1,21 @@
 {
   "compilerOptions": {
-    "target": "es5",
-    "lib": ["dom", "dom.iterable", "esnext"],
-    "allowJs": true,
-    "skipLibCheck": true,
-    "esModuleInterop": true,
+    "target": "ES2020",                   // Modern JavaScript support
+    "lib": ["DOM", "DOM.Iterable", "ES2020"], // Required for React and browser compatibility
+    "allowJs": true,                      // Allow JavaScript files alongside TypeScript
+    "skipLibCheck": true,                 // Skip type checking of node_modules
+    "esModuleInterop": true,              // Support for default imports
     "allowSyntheticDefaultImports": true,
-    "strict": true,
+    "strict": true,                       // Enable all strict type-checking options
     "forceConsistentCasingInFileNames": true,
-    "module": "esnext",
-    "moduleResolution": "node",
-    "resolveJsonModule": true,
-    "isolatedModules": true,
-    "noEmit": true,
-    "jsx": "react-jsx"
+    "module": "ESNext",                   // For React (supports dynamic imports)
+    "moduleResolution": "Node",
+    "resolveJsonModule": true,            // Allow importing JSON files
+    "isolatedModules": true,              // Required for React apps
+    "noEmit": true,                       // Prevent TypeScript from outputting JS files
+    "jsx": "react-jsx",
+    "types": ["jest", "node"]                
   },
-  "include": ["src"]
+  "include": ["src"],                     // Include all TypeScript files in the src folder
+  "exclude": ["node_modules"]
 }

@@ -1,11 +1,17 @@
+// client/src/pages/CodeBlockPage.tsx
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Box, Typography, Button } from '@mui/material';
 import CodeMirror from '@uiw/react-codemirror';
 import { javascript } from '@codemirror/lang-javascript';
-import { io } from 'socket.io-client';
+import socket from '../socket';
 
-const socket = io('http://localhost:4000'); // Connect to the server
+const codeBlocks = [
+  { id: '1', name: 'Async Case' },
+  { id: '2', name: 'Promises' },
+  { id: '3', name: 'Loops' },
+  { id: '4', name: 'Functions' },
+];
 
 const CodeBlockPage = () => {
   const { id } = useParams<{ id: string }>();
@@ -13,36 +19,30 @@ const CodeBlockPage = () => {
   const [role, setRole] = useState<'mentor' | 'student'>('student');
   const [code, setCode] = useState('// Start coding here...');
 
-  useEffect(() => {
-    const isMentor = !sessionStorage.getItem('mentorAssigned');
-    if (isMentor) {
-      setRole('mentor');
-      sessionStorage.setItem('mentorAssigned', 'true');
-    }
+  const codeBlock = codeBlocks.find((block) => block.id === id);
 
+  useEffect(() => {
     socket.emit('joinRoom', { roomId: id });
 
-    // Receive initial code when joining the room
-    socket.on('loadCode', (initialCode) => {
-      setCode(initialCode);
+    socket.on('assignRole', (assignedRole: 'mentor' | 'student') => {
+      setRole(assignedRole);
     });
 
-    // Listen for code updates from other users
-    socket.on('codeUpdate', (newCode) => {
-      if (role === 'mentor') {
-        setCode(newCode); // Mentor sees real-time updates
-      }
-    });
-
-    // Redirect to lobby if mentor leaves
     socket.on('redirectToLobby', () => {
-      sessionStorage.removeItem('mentorAssigned');
+      console.log('Mentor left, redirecting to the Lobby');
       navigate('/');
     });
 
+    socket.on('codeUpdate', (newCode: string) => {
+      if (role === 'mentor') {
+        setCode(newCode);
+      }
+    });
+
     return () => {
-      socket.off('codeUpdate');
+      socket.off('assignRole');
       socket.off('redirectToLobby');
+      socket.off('codeUpdate');
     };
   }, [id, navigate, role]);
 
@@ -54,29 +54,28 @@ const CodeBlockPage = () => {
   };
 
   const handleLeave = () => {
-    if (role === 'mentor') {
-      socket.emit('mentorLeft', id);
-    }
+    socket.disconnect();
     navigate('/');
   };
 
   return (
-    <Box textAlign="center" p={4} bgcolor="#d9d9d9" minHeight="100vh">
-      <Typography variant="h4" gutterBottom color="#732673">
-        Code Block {id}
+    <Box textAlign="center" p={4} bgcolor="#254E58" minHeight="100vh">
+      <Typography variant="h4" gutterBottom color="#88BDBC">
+        {codeBlock ? codeBlock.name : 'Code Block'}
       </Typography>
 
-      <Typography variant="h6" color={role === 'mentor' ? '#732673' : '#404040'}>
+      <Typography variant="h6" color={role === 'mentor' ? '#6E6658' : '#88BDBC'}>
         Role: {role === 'mentor' ? 'Mentor 👨‍🏫' : 'Student 👩‍🎓'}
       </Typography>
 
       <Box
         sx={{
-          backgroundColor: '#ffffff',
-          border: '1px solid #404040',
+          backgroundColor: '#FFFFFF',
+          border: '2px solid #88BDBC',
           borderRadius: '8px',
           padding: '20px',
           marginTop: '20px',
+          textAlign: 'left', // Align code to the left
         }}
       >
         <CodeMirror
@@ -92,11 +91,11 @@ const CodeBlockPage = () => {
         variant="contained"
         onClick={handleLeave}
         sx={{
-          backgroundColor: '#732673',
-          color: '#ffffff',
+          backgroundColor: '#112D32',
+          color: '#FFFFFF',
           marginTop: '20px',
           '&:hover': {
-            backgroundColor: '#404040',
+            backgroundColor: '#4F4A41',
           },
         }}
       >
