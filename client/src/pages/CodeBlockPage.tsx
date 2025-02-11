@@ -16,34 +16,35 @@ const CodeBlockPage = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [role, setRole] = useState<'mentor' | 'student'>('student');
-  const [code, setCode] = useState('// Start coding here...');
+  const [code, setCode] = useState('');
 
   const codeBlock = codeBlocks.find((block) => block.id === id);
 
+  const [studentCount, setStudentCount] = useState(0);
+
   useEffect(() => {
-    socket.emit('joinRoom', { roomId: id });
-
-    socket.on('assignRole', (assignedRole: 'mentor' | 'student') => {
-      setRole(assignedRole);
-    });
-
-    socket.on('redirectToLobby', () => {
-      console.log('Mentor left, redirecting to the Lobby');
-      navigate('/');
-    });
-
-    socket.on('codeUpdate', (newCode: string) => {
-      if (role === 'mentor') {
-        setCode(newCode);
-      }
-    });
-
+    let joined = false; // Prevent multiple joinRoom events
+  
+    if (!joined) {
+      socket.emit('joinRoom', { roomId: id });
+      joined = true;
+    }
+  
+    socket.on('assignRole', (assignedRole) => setRole(assignedRole));
+    socket.on('studentCount', (count) => setStudentCount(count));
+    socket.on('codeUpdate', (newCode) => setCode(newCode));
+    socket.on('redirectToLobby', () => navigate('/'));
+  
     return () => {
       socket.off('assignRole');
-      socket.off('redirectToLobby');
+      socket.off('studentCount');
       socket.off('codeUpdate');
+      socket.off('redirectToLobby');
+      joined = false;
     };
-  }, [id, navigate, role]);
+  }, [id, navigate]);
+  
+  
 
   const handleCodeChange = (value: string) => {
     if (role === 'student') {
@@ -63,9 +64,14 @@ const CodeBlockPage = () => {
         {codeBlock ? codeBlock.name : 'Code Block'}
       </Typography>
 
-      <Typography variant="h6" color={role === 'mentor' ? '#6E6658' : '#88BDBC'}>
+    <Typography variant="h6" color={role === 'mentor' ? '#6E6658' : '#88BDBC'}>
         Role: {role === 'mentor' ? 'Mentor 👨‍🏫' : 'Student 👩‍🎓'}
-      </Typography>
+    </Typography>
+
+    <Typography variant="h6" color="#88BDBC">
+        Students in Room: {studentCount}
+    </Typography>
+
 
       <Box
         sx={{
