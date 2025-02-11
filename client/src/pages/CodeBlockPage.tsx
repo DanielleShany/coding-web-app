@@ -4,8 +4,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Box, Typography, Button } from '@mui/material';
 import CodeMirror from '@uiw/react-codemirror';
 import { javascript } from '@codemirror/lang-javascript';
-import socket from '../socket';
-
+import socket from '../sockets';
 const codeBlocks = [
   { id: '1', name: 'Async Case' },
   { id: '2', name: 'Promises' },
