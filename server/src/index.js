@@ -6,20 +6,34 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: "http://localhost:3000", // React app URL
-    methods: ["GET", "POST"]
-  }
+    origin: 'http://localhost:3000', // Allow requests from the React app
+    methods: ['GET', 'POST'],
+  },
 });
 
-app.get('/', (req, res) => {
-  res.send('Server is running!');
-});
+let codeBlocks = {}; // To store code temporarily in memory
 
 io.on('connection', (socket) => {
   console.log('A user connected:', socket.id);
 
-  socket.on('codeChange', (newCode) => {
-    socket.broadcast.emit('codeUpdate', newCode);
+  socket.on('joinRoom', ({ roomId }) => {
+    socket.join(roomId);
+    console.log(`User joined room: ${roomId}`);
+
+    // Send the current code to the new user
+    if (codeBlocks[roomId]) {
+      socket.emit('loadCode', codeBlocks[roomId]);
+    }
+  });
+
+  socket.on('codeChange', ({ roomId, code }) => {
+    codeBlocks[roomId] = code; // Save the code
+    socket.to(roomId).emit('codeUpdate', code); // Broadcast to others in the room
+  });
+
+  socket.on('mentorLeft', (roomId) => {
+    delete codeBlocks[roomId]; // Clear code when mentor leaves
+    io.to(roomId).emit('redirectToLobby'); // Redirect all students
   });
 
   socket.on('disconnect', () => {
