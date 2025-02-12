@@ -5,12 +5,12 @@ import CodeMirror from "@uiw/react-codemirror";
 import { javascript } from "@codemirror/lang-javascript";
 import { io, Socket } from "socket.io-client";
 
-const codeBlocks = [
-  { id: "1", name: "Async Case" },
-  { id: "2", name: "Promises" },
-  { id: "3", name: "Loops" },
-  { id: "4", name: "Functions" },
-];
+// ✅ TypeScript interface for CodeBlock
+interface CodeBlock {
+  _id: string;
+  name: string;
+  code: string;
+}
 
 const CodeBlockPage = () => {
   const { id } = useParams<{ id: string }>();
@@ -18,33 +18,33 @@ const CodeBlockPage = () => {
   const [role, setRole] = useState<"mentor" | "student">("student");
   const [code, setCode] = useState("");
   const [studentCount, setStudentCount] = useState(0);
-  const codeBlock = codeBlocks.find((block) => block.id === id);
+  const [codeBlock, setCodeBlock] = useState<CodeBlock | null>(null); // ✅ Fix here
+  const [showSmiley, setShowSmiley] = useState(false);
+  const [socket, setSocket] = useState<Socket | null>(null);
 
   useEffect(() => {
-    const socket: Socket = io("http://localhost:4000", { transports: ["websocket"] });
+    const newSocket: Socket = io("http://localhost:4000", { transports: ["websocket"] });
+    setSocket(newSocket);
   
-    socket.on("connect", () => {
-      console.log(`🔗 Connected with ID: ${socket.id}`);
-      socket.emit("joinRoom", { roomId: id });
+    newSocket.on("connect", () => {
+      console.log(`🔗 Connected with ID: ${newSocket.id}`);
+      newSocket.emit("joinRoom", { roomId: id }); // ✅ Join room with the correct ID
     });
   
-    const handleAssignRole = (assignedRole: "mentor" | "student") => setRole(assignedRole);
-    const handleStudentCount = (count: number) => setStudentCount(count);
-    const handleCodeUpdate = (newCode: string) => setCode(newCode); // ✅ Listen for code updates
-    const handleRedirect = () => navigate("/");
+    newSocket.on("assignRole", (assignedRole: "mentor" | "student") => setRole(assignedRole));
+    newSocket.on("studentCount", (count: number) => setStudentCount(count));
+    
+    // ✅ Receive and set the saved code
+    newSocket.on("codeUpdate", (newCode: string) => {
+      console.log("Received code:", newCode); // ✅ Debug
+      setCode(newCode);
+    });
   
-    socket.on("assignRole", handleAssignRole);
-    socket.on("studentCount", handleStudentCount);
-    socket.on("codeUpdate", handleCodeUpdate); // ✅ Attach the listener
-    socket.on("redirectToLobby", handleRedirect);
+    newSocket.on("redirectToLobby", () => navigate("/"));
+    newSocket.on("showSmiley", () => setShowSmiley(true));
   
     return () => {
-      console.log(`❌ Disconnecting socket: ${socket.id}`);
-      socket.disconnect();
-      socket.off("assignRole", handleAssignRole);
-      socket.off("studentCount", handleStudentCount);
-      socket.off("codeUpdate", handleCodeUpdate); // ✅ Remove listener
-      socket.off("redirectToLobby", handleRedirect);
+      newSocket.disconnect();
     };
   }, [id, navigate]);
   
@@ -52,10 +52,12 @@ const CodeBlockPage = () => {
   const handleCodeChange = (value: string) => {
     if (role === "student") {
       setCode(value);
-      const socket = io("http://localhost:4000", { transports: ["websocket"] });
-      socket.emit("codeChange", { roomId: id, code: value });
+      if (socket) {
+        socket.emit("codeChange", { roomId: id, code: value });
+      }
     }
   };
+  
 
   const handleLeave = () => {
     navigate("/");
@@ -64,7 +66,7 @@ const CodeBlockPage = () => {
   return (
     <Box textAlign="center" p={4} bgcolor="#254E58" minHeight="100vh">
       <Typography variant="h4" gutterBottom color="#88BDBC">
-        {codeBlock ? codeBlock.name : "Code Block"}
+        {codeBlock ? codeBlock.name : "Loading..."}
       </Typography>
 
       <Typography variant="h6" color={role === "mentor" ? "#6E6658" : "#88BDBC"}>
@@ -93,6 +95,23 @@ const CodeBlockPage = () => {
           readOnly={role === "mentor"}
         />
       </Box>
+
+      {showSmiley && (
+        <Typography
+          variant="h1"
+          color="yellow"
+          sx={{
+            mt: 4,
+            animation: "bounce 1s infinite",
+            "@keyframes bounce": {
+              "0%, 100%": { transform: "translateY(0)" },
+              "50%": { transform: "translateY(-20px)" },
+            },
+          }}
+        >
+          😊
+        </Typography>
+      )}
 
       <Button
         variant="contained"

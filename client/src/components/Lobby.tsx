@@ -1,43 +1,51 @@
 import React, { useEffect, useState } from "react";
-import { Button, Box, Typography, Grid, TextField, Dialog, DialogActions, DialogContent, DialogTitle } from "@mui/material";
 import { useNavigate } from "react-router-dom";
-import { io, Socket } from "socket.io-client";
+import { Box, Typography, Button, Grid, Dialog, DialogTitle, DialogContent, TextField, DialogActions } from "@mui/material";
+import { io } from "socket.io-client";
 
-const socket: Socket = io("http://localhost:4000", { transports: ["websocket"] });
+const socket = io("http://localhost:4000");
+interface CodeBlock {
+  _id: string;
+  name: string;
+  code?: string;    
+  solution?: string;  
+}
+
 
 const Lobby = () => {
-  const navigate = useNavigate();
-  const [codeBlocks, setCodeBlocks] = useState([
-    { id: "1", name: "Async Case" },
-    { id: "2", name: "Promises" },
-    { id: "3", name: "Loops" },
-    { id: "4", name: "Functions" },
-  ]);
+  const [codeBlocks, setCodeBlocks] = useState<CodeBlock[]>([]); 
+
   const [open, setOpen] = useState(false);
   const [newBlockName, setNewBlockName] = useState("");
+  const navigate = useNavigate();
 
   useEffect(() => {
-    socket.emit('getCodeBlocks'); // ✅ Request code blocks on load
-  
-    socket.on('codeBlocks', (blocks) => {
-      setCodeBlocks(blocks); // ✅ Set fetched blocks
+    socket.emit("getCodeBlocks"); 
+
+    socket.on("codeBlocks", (blocks: CodeBlock[]) => {
+      console.log("✅ Received code blocks from server:", blocks);  // ✅ Debug log
+      setCodeBlocks(blocks);
     });
-  
-    socket.on('newCodeBlock', (newBlock) => {
-      setCodeBlocks((prev) => [...prev, newBlock]); // ✅ Real-time updates
+    
+
+    socket.on("newCodeBlock", (newBlock) => {
+      console.log("🆕 New Block Received:", newBlock); 
+      setCodeBlocks((prev: CodeBlock[]) => [...prev, newBlock]);
+
     });
-  
+
     return () => {
-      socket.off('codeBlocks');
-      socket.off('newCodeBlock');
+      socket.off("codeBlocks");
+      socket.off("newCodeBlock");
     };
   }, []);
-  
 
   const handleCreateBlock = () => {
-    socket.emit("createCodeBlock", { name: newBlockName }); // ✅ Send create event to server
-    setNewBlockName("");
-    setOpen(false);
+    if (newBlockName.trim()) {
+      socket.emit("createCodeBlock", { name: newBlockName });
+      setNewBlockName("");
+      setOpen(false);
+    }
   };
 
   return (
@@ -48,11 +56,11 @@ const Lobby = () => {
 
       <Grid container spacing={2} justifyContent="center">
         {codeBlocks.map((block) => (
-          <Grid item xs={6} sm={3} key={block.id}>
+          <Grid item xs={6} sm={3} key={block._id}> {/* ✅ Use _id here */}
             <Button
               variant="contained"
               fullWidth
-              onClick={() => navigate(`/codeblock/${block.id}`)}
+              onClick={() => navigate(`/codeblock/${block._id}`)} // ✅ Navigate with MongoDB _id
               sx={{
                 backgroundColor: "#112D32",
                 color: "#FFFFFF",
