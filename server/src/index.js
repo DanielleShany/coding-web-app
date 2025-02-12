@@ -12,6 +12,7 @@ const allowedOrigins = [
   "https://coding-web-app-danielleshanys-projects.vercel.app",
   "https://coding-web-app-git-main-danielleshanys-projects.vercel.app",
   "http://localhost:3000",
+  "https://coding-web-pw4jdr9v8-danielleshanys-projects.vercel.app"
 ];
 
 // ✅ Apply CORS for Express
