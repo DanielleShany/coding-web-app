@@ -5,25 +5,21 @@ const roomCode = {};       // Tracks current code per room
 const studentCount = {};   // Tracks student count per room
 
 const CodeBlock = require('../models/CodeBlock'); 
+
 const initializeCodeBlocks = async () => {
     const existingBlocks = await CodeBlock.find();
-  
     if (existingBlocks.length === 0) {
       const initialBlocks = [
-        { name: "Async Case", code: "", solution: "async function fetchData() { /* solution */ }" },
-        { name: "Promises", code: "", solution: "function simulateTask(success) { /* solution */ }" },
-        { name: "Loops", code: "", solution: "function printNumbersWithFor() { /* solution */ }" },
-        { name: "Functions", code: "", solution: "function greet(name) { /* solution */ }" },
+        { name: "Async Case", code: "// Write an async function below", solution: "async function fetchData() { return 'Data fetched'; }" },
+        { name: "Promises", code: "// Implement a promise-based function", solution: "function simulateTask() { return new Promise((resolve) => resolve('Task completed')); }" },
+        { name: "Loops", code: "// Write a loop to print numbers", solution: "for (let i = 0; i < 5; i++) { console.log(i); }" },
+        { name: "Functions", code: "// Create a function to greet a user, print '\'Hello, name!'\')", solution: "function greet(name) { return `Hello, ${name}!`; }" }
       ];
       await CodeBlock.insertMany(initialBlocks);
-      console.log("✅ Database initialized with 4 code blocks.");
-    } else {
-      console.log("ℹ️ Code blocks already exist. Skipping initialization.");
+      console.log("✅ Database initialized with code blocks.");
     }
   };
-      
-
-
+  
 module.exports = (io) => {
   io.on('connection', (socket) => {
     console.log('New client connected:', socket.id);
@@ -49,7 +45,7 @@ module.exports = (io) => {
         console.log(`Student Count in Room ${roomId}: ${studentCount[roomId]}`);
       }
 
-      // ✅ Send the current code to the new client (if exists)
+      // Send the current code to the new client (if exists)
       if (roomCode[roomId]) {
         socket.emit("codeUpdate", roomCode[roomId]);
       }
@@ -59,8 +55,9 @@ module.exports = (io) => {
 
       const codeBlock = await CodeBlock.findById(roomId);
       if (codeBlock) {
-        socket.emit("codeUpdate", codeBlock.code);  // ✅ Send saved code
+        socket.emit("codeBlockData", codeBlock);   // Send the full code block
       }
+    
     });
 
     // ✅ Handle Code Block Creation (Mongoose)
@@ -71,31 +68,35 @@ module.exports = (io) => {
       });
 
     // Send All Code Blocks When a Client Connects
-    socket.on("getCodeBlocks", async () => {
-        const codeBlocks = await CodeBlock.find();
-        console.log("📦 Sending code blocks to client:", codeBlocks);  // ✅ Debug log
-        socket.emit("codeBlocks", codeBlocks);
+    socket.on('getCodeBlocks', async () => {
+        try {
+          const codeBlocks = await CodeBlock.find();
+          console.log("📦 Sending code blocks to client:", codeBlocks); // Debug log
+          socket.emit('codeBlocks', codeBlocks);
+        } catch (error) {
+          console.error('❌ Error fetching code blocks:', error);
+        }
       });
       
       
     //Handle real-time updates in code blocks
     socket.on("codeChange", async ({ roomId, code }) => {
         try {
-          // ✅ Save code to MongoDB
-          await CodeBlock.findByIdAndUpdate(roomId, { code });
           
-          // ✅ Broadcast the code to others
+          await CodeBlock.findByIdAndUpdate(roomId, { code });
+    
           socket.to(roomId).emit("codeUpdate", code);
       
-          // ✅ Check for solution match
+          // ✅ Fetch the solution
           const codeBlock = await CodeBlock.findById(roomId);
           if (codeBlock && code.trim() === codeBlock.solution.trim()) {
-            io.to(roomId).emit("showSmiley");
+            io.to(roomId).emit("showSmiley"); 
           }
         } catch (error) {
-          console.error("❌ Error saving code:", error);
+          console.error("❌ Error updating code:", error);
         }
       });
+      
       
       
     // ✅ Handle Disconnections
