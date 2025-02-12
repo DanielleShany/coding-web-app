@@ -1,27 +1,32 @@
 const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
-const cors = require('cors');
 const roomManager = require('./services/roomManager.js');
 const mongoose = require('mongoose');
+const cors = require("cors");
 
 const app = express();
-app.use(cors());
-  //{
-//   origin: "http://localhost:3000", // Allow requests from your React app
-//   methods: ["GET", "POST"],        // Allow GET and POST methods
-//   credentials: true                // Allow credentials (optional)
-// }));
+const allowedOrigin = process.env.ALLOWED_ORIGIN || "http://localhost:3000";
+
+// ✅ CORS for both Express & Socket.io
+app.use(cors({
+  origin: allowedOrigin,
+  methods: ["GET", "POST"],
+  credentials: true
+}));
 
 const server = http.createServer(app);
+
 const io = new Server(server, {
   cors: {
-    origin: "http://localhost:3000",
+    origin: allowedOrigin,  // ✅ Use the same allowed origin
     methods: ["GET", "POST"]
   }
 });
 
 roomManager(io);
+
+// ✅ MongoDB connection
 mongoose
   .connect('mongodb+srv://tomsClassroom:Thailand123@codingwebapp.y6l4x.mongodb.net/codingWebApp?retryWrites=true&w=majority', {
     useNewUrlParser: true,
@@ -30,6 +35,7 @@ mongoose
   .then(() => console.log('✅ Connected to MongoDB'))
   .catch((err) => console.error('❌ MongoDB connection error:', err));
 
+// ✅ Server start
 server.listen(4000, () => {
   console.log('✅ Server is running on http://localhost:4000');
 });
