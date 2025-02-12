@@ -6,11 +6,12 @@ const mongoose = require('mongoose');
 const cors = require("cors");
 
 const app = express();
-const allowedOrigin = 
-["https://coding-web-app-danielleshanys-projects.vercel.app",
-  "http://localhost:3000"
+const allowedOrigins = [
+  "https://coding-web-app-danielleshanys-projects.vercel.app",
+  "https://coding-web-app-git-main-danielleshanys-projects.vercel.app",
+  "http://localhost:3000", 
+  "https://coding-web-pw4jdr9v8-danielleshanys-projects.vercel.app"
 ];
-
 // ✅ CORS for both Express & Socket.io
 app.use(cors({
   origin: allowedOrigin,
@@ -18,15 +19,24 @@ app.use(cors({
   credentials: true
 }));
 
-const server = http.createServer(app);
+app.use(cors({
+  origin: (origin, callback) => {
+    if (allowedOrigins.includes(origin) || !origin) {
+      callback(null, true); // ✅ Allow requests from listed origins
+    } else {
+      callback(new Error("❌ Not allowed by CORS")); // 🚫 Block unknown origins
+    }
+  },
+  methods: ["GET", "POST"],
+  credentials: true,
+}));
 
 const io = new Server(server, {
   cors: {
-    origin: allowedOrigin,  // ✅ Use the same allowed origin
-    methods: ["GET", "POST"]
-  }
+    origin: allowedOrigins,
+    methods: ["GET", "POST"],
+  },
 });
-
 roomManager(io);
 
 // ✅ MongoDB connection
