@@ -1,46 +1,37 @@
 const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
-
+const cors = require('cors');
+const roomManager = require('./services/roomManager.js');
+const mongoose = require('mongoose');
 const app = express();
+
+app.use(cors({
+  origin: "http://localhost:3000", // Allow requests from your React app
+  methods: ["GET", "POST"],        // Allow GET and POST methods
+  credentials: true                // Allow credentials (optional)
+}));
+
 const server = http.createServer(app);
+
+// ✅ Pass CORS options to Socket.io
 const io = new Server(server, {
   cors: {
-    origin: 'http://localhost:3000', // Allow requests from the React app
-    methods: ['GET', 'POST'],
-  },
+    origin: "http://localhost:3000",
+    methods: ["GET", "POST"]
+  }
 });
 
-let codeBlocks = {}; // To store code temporarily in memory
+roomManager(io);
 
-io.on('connection', (socket) => {
-  console.log('A user connected:', socket.id);
-
-  socket.on('joinRoom', ({ roomId }) => {
-    socket.join(roomId);
-    console.log(`User joined room: ${roomId}`);
-
-    // Send the current code to the new user
-    if (codeBlocks[roomId]) {
-      socket.emit('loadCode', codeBlocks[roomId]);
-    }
-  });
-
-  socket.on('codeChange', ({ roomId, code }) => {
-    codeBlocks[roomId] = code; // Save the code
-    socket.to(roomId).emit('codeUpdate', code); // Broadcast to others in the room
-  });
-
-  socket.on('mentorLeft', (roomId) => {
-    delete codeBlocks[roomId]; // Clear code when mentor leaves
-    io.to(roomId).emit('redirectToLobby'); // Redirect all students
-  });
-
-  socket.on('disconnect', () => {
-    console.log('User disconnected:', socket.id);
-  });
-});
+mongoose
+  .connect('mongodb+srv://tomsClassroom:Thailand123@codingwebapp.y6l4x.mongodb.net/codingWebApp?retryWrites=true&w=majority', {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+  })
+  .then(() => console.log('✅ Connected to MongoDB'))
+  .catch((err) => console.error('❌ MongoDB connection error:', err));
 
 server.listen(4000, () => {
-  console.log('Server running on http://localhost:4000');
+  console.log('✅ Server is running on http://localhost:4000');
 });

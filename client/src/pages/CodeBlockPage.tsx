@@ -1,82 +1,90 @@
-import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { Box, Typography, Button } from '@mui/material';
-import CodeMirror from '@uiw/react-codemirror';
-import { javascript } from '@codemirror/lang-javascript';
-import { io } from 'socket.io-client';
+import React, { useEffect, useState } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import { Box, Typography, Button } from "@mui/material";
+import CodeMirror from "@uiw/react-codemirror";
+import { javascript } from "@codemirror/lang-javascript";
+import { io, Socket } from "socket.io-client";
 
-const socket = io('http://localhost:4000'); // Connect to the server
+// ✅ TypeScript interface for CodeBlock
+interface CodeBlock {
+  _id: string;
+  name: string;
+  code: string;
+}
 
 const CodeBlockPage = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const [role, setRole] = useState<'mentor' | 'student'>('student');
-  const [code, setCode] = useState('// Start coding here...');
+  const [role, setRole] = useState<"mentor" | "student">("student");
+  const [code, setCode] = useState("");
+  const [studentCount, setStudentCount] = useState(0);
+  const [codeBlock, setCodeBlock] = useState<CodeBlock | null>(null); // ✅ Fix here
+  const [showSmiley, setShowSmiley] = useState(false);
+  const [socket, setSocket] = useState<Socket | null>(null);
 
   useEffect(() => {
-    const isMentor = !sessionStorage.getItem('mentorAssigned');
-    if (isMentor) {
-      setRole('mentor');
-      sessionStorage.setItem('mentorAssigned', 'true');
-    }
-
-    socket.emit('joinRoom', { roomId: id });
-
-    // Receive initial code when joining the room
-    socket.on('loadCode', (initialCode) => {
-      setCode(initialCode);
+    const newSocket: Socket = io("http://localhost:4000", { transports: ["websocket"] });
+    setSocket(newSocket);
+  
+    newSocket.on("connect", () => {
+      console.log(`🔗 Connected with ID: ${newSocket.id}`);
+      newSocket.emit("joinRoom", { roomId: id }); // ✅ Join room with the correct ID
     });
-
-    // Listen for code updates from other users
-    socket.on('codeUpdate', (newCode) => {
-      if (role === 'mentor') {
-        setCode(newCode); // Mentor sees real-time updates
-      }
+  
+    newSocket.on("assignRole", (assignedRole: "mentor" | "student") => setRole(assignedRole));
+    newSocket.on("studentCount", (count: number) => setStudentCount(count));
+    
+    // ✅ Receive and set the saved code
+    newSocket.on("codeUpdate", (newCode: string) => {
+      console.log("Received code:", newCode); // ✅ Debug
+      setCode(newCode);
     });
-
-    // Redirect to lobby if mentor leaves
-    socket.on('redirectToLobby', () => {
-      sessionStorage.removeItem('mentorAssigned');
-      navigate('/');
-    });
-
+  
+    newSocket.on("redirectToLobby", () => navigate("/"));
+    newSocket.on("showSmiley", () => setShowSmiley(true));
+  
     return () => {
-      socket.off('codeUpdate');
-      socket.off('redirectToLobby');
+      newSocket.disconnect();
     };
-  }, [id, navigate, role]);
+  }, [id, navigate]);
+  
 
   const handleCodeChange = (value: string) => {
-    if (role === 'student') {
+    if (role === "student") {
       setCode(value);
-      socket.emit('codeChange', { roomId: id, code: value });
+      if (socket) {
+        socket.emit("codeChange", { roomId: id, code: value });
+      }
     }
   };
+  
 
   const handleLeave = () => {
-    if (role === 'mentor') {
-      socket.emit('mentorLeft', id);
-    }
-    navigate('/');
+    navigate("/");
   };
 
   return (
-    <Box textAlign="center" p={4} bgcolor="#d9d9d9" minHeight="100vh">
-      <Typography variant="h4" gutterBottom color="#732673">
-        Code Block {id}
+    <Box textAlign="center" p={4} bgcolor="#254E58" minHeight="100vh">
+      <Typography variant="h4" gutterBottom color="#88BDBC">
+        {codeBlock ? codeBlock.name : "Loading..."}
       </Typography>
 
-      <Typography variant="h6" color={role === 'mentor' ? '#732673' : '#404040'}>
-        Role: {role === 'mentor' ? 'Mentor 👨‍🏫' : 'Student 👩‍🎓'}
+      <Typography variant="h6" color={role === "mentor" ? "#6E6658" : "#88BDBC"}>
+        Role: {role === "mentor" ? "Mentor 👨‍🏫" : "Student 👩‍🎓"}
+      </Typography>
+
+      <Typography variant="h6" color="#88BDBC">
+        Students in Room: {studentCount}
       </Typography>
 
       <Box
         sx={{
-          backgroundColor: '#ffffff',
-          border: '1px solid #404040',
-          borderRadius: '8px',
-          padding: '20px',
-          marginTop: '20px',
+          backgroundColor: "#FFFFFF",
+          border: "2px solid #88BDBC",
+          borderRadius: "8px",
+          padding: "20px",
+          marginTop: "20px",
+          textAlign: "left",
         }}
       >
         <CodeMirror
@@ -84,19 +92,36 @@ const CodeBlockPage = () => {
           height="300px"
           extensions={[javascript()]}
           onChange={handleCodeChange}
-          readOnly={role === 'mentor'}
+          readOnly={role === "mentor"}
         />
       </Box>
+
+      {showSmiley && (
+        <Typography
+          variant="h1"
+          color="yellow"
+          sx={{
+            mt: 4,
+            animation: "bounce 1s infinite",
+            "@keyframes bounce": {
+              "0%, 100%": { transform: "translateY(0)" },
+              "50%": { transform: "translateY(-20px)" },
+            },
+          }}
+        >
+          😊
+        </Typography>
+      )}
 
       <Button
         variant="contained"
         onClick={handleLeave}
         sx={{
-          backgroundColor: '#732673',
-          color: '#ffffff',
-          marginTop: '20px',
-          '&:hover': {
-            backgroundColor: '#404040',
+          backgroundColor: "#112D32",
+          color: "#FFFFFF",
+          marginTop: "20px",
+          "&:hover": {
+            backgroundColor: "#4F4A41",
           },
         }}
       >
