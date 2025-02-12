@@ -22,7 +22,6 @@ const io = new Server(server, {
 });
 
 roomManager(io);
-
 mongoose
   .connect('mongodb+srv://tomsClassroom:Thailand123@codingwebapp.y6l4x.mongodb.net/codingWebApp?retryWrites=true&w=majority', {
     useNewUrlParser: true,
