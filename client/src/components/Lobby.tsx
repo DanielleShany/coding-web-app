@@ -17,14 +17,22 @@ const Lobby = () => {
   const [newBlockName, setNewBlockName] = useState("");
 
   useEffect(() => {
-    socket.on("newCodeBlock", (newBlock) => {
-      setCodeBlocks((prev) => [...prev, newBlock]); // ✅ Add new blocks in real-time
+    socket.emit('getCodeBlocks'); // ✅ Request code blocks on load
+  
+    socket.on('codeBlocks', (blocks) => {
+      setCodeBlocks(blocks); // ✅ Set fetched blocks
     });
-
+  
+    socket.on('newCodeBlock', (newBlock) => {
+      setCodeBlocks((prev) => [...prev, newBlock]); // ✅ Real-time updates
+    });
+  
     return () => {
-      socket.off("newCodeBlock");
+      socket.off('codeBlocks');
+      socket.off('newCodeBlock');
     };
   }, []);
+  
 
   const handleCreateBlock = () => {
     socket.emit("createCodeBlock", { name: newBlockName }); // ✅ Send create event to server
