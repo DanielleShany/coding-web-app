@@ -6,7 +6,7 @@ const mongoose = require('mongoose');
 const cors = require("cors");
 
 const app = express();
-const allowedOrigin = process.env.ALLOWED_ORIGIN || "https://coding-web-ent4d40uu-danielleshanys-projects.vercel.app";
+const allowedOrigin = process.env.ALLOWED_ORIGIN || "https://coding-web-489ai8ihz-danielleshanys-projects.vercel.app";
 
 // ✅ CORS for both Express & Socket.io
 app.use(cors({
