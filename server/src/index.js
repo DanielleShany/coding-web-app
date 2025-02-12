@@ -4,17 +4,16 @@ const { Server } = require('socket.io');
 const cors = require('cors');
 const roomManager = require('./services/roomManager.js');
 const mongoose = require('mongoose');
-const app = express();
 
-app.use(cors({
-  origin: "http://localhost:3000", // Allow requests from your React app
-  methods: ["GET", "POST"],        // Allow GET and POST methods
-  credentials: true                // Allow credentials (optional)
-}));
+const app = express();
+app.use(cors());
+  //{
+//   origin: "http://localhost:3000", // Allow requests from your React app
+//   methods: ["GET", "POST"],        // Allow GET and POST methods
+//   credentials: true                // Allow credentials (optional)
+// }));
 
 const server = http.createServer(app);
-
-// ✅ Pass CORS options to Socket.io
 const io = new Server(server, {
   cors: {
     origin: "http://localhost:3000",

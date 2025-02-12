@@ -18,7 +18,7 @@ const CodeBlockPage = () => {
   const [role, setRole] = useState<"mentor" | "student">("student");
   const [code, setCode] = useState("");
   const [studentCount, setStudentCount] = useState(0);
-  const [codeBlock, setCodeBlock] = useState<CodeBlock | null>(null); // ✅ Fix here
+  const [codeBlock, setCodeBlock] = useState<CodeBlock | null>(null); 
   const [showSmiley, setShowSmiley] = useState(false);
   const [socket, setSocket] = useState<Socket | null>(null);
 
@@ -28,15 +28,21 @@ const CodeBlockPage = () => {
   
     newSocket.on("connect", () => {
       console.log(`🔗 Connected with ID: ${newSocket.id}`);
-      newSocket.emit("joinRoom", { roomId: id }); // ✅ Join room with the correct ID
+      newSocket.emit("joinRoom", { roomId: id }); 
     });
   
     newSocket.on("assignRole", (assignedRole: "mentor" | "student") => setRole(assignedRole));
     newSocket.on("studentCount", (count: number) => setStudentCount(count));
-    
-    // ✅ Receive and set the saved code
+  
+    // ✅ Add this to fetch code block details
+    newSocket.on("codeBlockData", (block: CodeBlock) => {
+      console.log("📦 Received Code Block:", block);
+      setCodeBlock(block);       
+      setCode(block.code);     
+    });
+  
     newSocket.on("codeUpdate", (newCode: string) => {
-      console.log("Received code:", newCode); // ✅ Debug
+      console.log("📝 Received code update:", newCode);
       setCode(newCode);
     });
   
@@ -47,6 +53,7 @@ const CodeBlockPage = () => {
       newSocket.disconnect();
     };
   }, [id, navigate]);
+  
   
 
   const handleCodeChange = (value: string) => {
