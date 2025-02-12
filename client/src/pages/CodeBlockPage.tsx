@@ -23,7 +23,7 @@ const CodeBlockPage = () => {
   const [socket, setSocket] = useState<Socket | null>(null);
 
   useEffect(() => {
-    const newSocket: Socket = io("http://localhost:4000", { transports: ["websocket"] });
+    const newSocket: Socket = io("https://coding-web-app-yx33.onrender.com", { transports: ["websocket"] });
     setSocket(newSocket);
   
     newSocket.on("connect", () => {

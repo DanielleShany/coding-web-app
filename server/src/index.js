@@ -6,7 +6,7 @@ const mongoose = require('mongoose');
 const cors = require("cors");
 
 const app = express();
-const allowedOrigin = process.env.ALLOWED_ORIGIN || "http://localhost:3000";
+const allowedOrigin = process.env.ALLOWED_ORIGIN || "https://coding-web-ent4d40uu-danielleshanys-projects.vercel.app";
 
 // ✅ CORS for both Express & Socket.io
 app.use(cors({
@@ -37,5 +37,5 @@ mongoose
 
 // ✅ Server start
 server.listen(4000, () => {
-  console.log('✅ Server is running on http://localhost:4000');
+  console.log('✅ Server is running on https://coding-web-app-yx33.onrender.com');
 });
