@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Box, Typography, Button, Grid, Dialog, DialogTitle, DialogContent, TextField, DialogActions } from "@mui/material";
 import { io } from "socket.io-client";
 
-const socket = io("hhttps://coding-web-app-yx33.onrender.com");
+const socket = io("https://coding-web-app-yx33.onrender.com");
 interface CodeBlock {
   _id: string;
   name: string;
