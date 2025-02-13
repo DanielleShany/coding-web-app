@@ -65,7 +65,6 @@ const CodeBlockPage = () => {
     }
   };
   
-
   const handleLeave = () => {
     navigate("/");
   };
@@ -135,7 +134,8 @@ const CodeBlockPage = () => {
         Leave Code Block
       </Button>
     </Box>
+    
   );
-};
+};  
 
 export default CodeBlockPage;
