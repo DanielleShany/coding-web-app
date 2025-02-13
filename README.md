@@ -12,13 +12,13 @@ A real-time collaborative coding platform where students can practice JavaScript
 
 ## **Code Blocks Solutions**
 - **Async Case**
-   async function fetchData() { return 'Data fetched'; }
+   : async function fetchData() { return 'Data fetched'; }
 - **Promises**
-    function simulateTask() { return new Promise((resolve) => resolve('Task completed')); }
+   : function simulateTask() { return new Promise((resolve) => resolve('Task completed')); }
 - **Loops**
-   for (let i = 0; i < 5; i++) { console.log(i); }
+   : for (let i = 0; i < 5; i++) { console.log(i); }
 - **Functions**
-   function greet(name) { return \`Hello, \${name}!\`; }
+   : function greet(name) { return \`Hello, \${name}!\`; }
 
   
 ## **Tech Stack**  
